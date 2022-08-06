@@ -9,13 +9,15 @@
 #define encoder   15  
 #define buzzer    23
 
-//Structura de boton
-typedef struct {
-  const uint8_t PIN;
-  uint32_t numberKeyPresses;
-  bool pressed;
-}BTN;
-//Buttons 
-#define btnIzq (BTN){2, 0, false}
-#define btnDer (BTN){4, 0, false}
-#define btnLock (BTN){5, 0, false}
+//Buttons
+#define PIN_BTN_DER 4
+#define PIN_BTN_IZQ 2
+#define PIN_BTN_LOCK 5
+
+bool FLAG_DER = false;
+bool FLAG_IZQ = false;
+bool FLAG_LOCK = false;
+
+bool STATE_DER = false;
+bool STATE_IZQ = false;
+bool STATE_LOCK = false;
