@@ -11,5 +11,5 @@
 #define btn_alarm   5
 
 //Components
-#define encoder   15  
+#define PIN_ENCODER   15  
 #define buzzer    23
