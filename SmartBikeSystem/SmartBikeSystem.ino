@@ -11,6 +11,8 @@ bool stateLedFront=false;
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
+
+
 void IRAM_ATTR timerLed() {
   portENTER_CRITICAL_ISR(&timerMux);
   stateLed=!stateLed;
@@ -104,12 +106,14 @@ void loop() {
   }
   if(STATE_LOCK){
     Serial.println("Candado activado");
+    delay(1500);
+    FLAG_LOCK=false;
     antirrobo();
     if(stateSirena)
     alarma();
-    delay(1500);
-    FLAG_LOCK=false;
+    
   }
+  Serial.println(STATE_LOCK);
 }
 
 void antirrobo()
@@ -226,44 +230,58 @@ void alarma() {
 
   for (int count=1;count<=10;count++)
   {
+    if(!STATE_LOCK)
+    break;
     risefall();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap);
   for (int count=1;count<=10;count++)
   {
+    if(!STATE_LOCK)
+    break;
     fall(300);
   } 
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
   for (int count=1;count<=5;count++)
   {
+    if(!STATE_LOCK)
+    break;
     fall(600);
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
   for (int count=1;count<5;count++)
   {
+    if(!STATE_LOCK)
+    break;
     rise();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
   for (int count=1;count<5;count++)
   {
+    if(!STATE_LOCK)
+    break;
     twotone();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
   for (int count=1;count<10;count++)
   {
+    if(!STATE_LOCK)
+    break;
     zap1();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
   for (int count=1;count<10;count++)
   {
+    if(!STATE_LOCK)
+    break;
     zap2();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
-  delay(gap);  
+  delay(gap);
 }
