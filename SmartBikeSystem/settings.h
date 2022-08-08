@@ -11,5 +11,15 @@
 #define btn_alarm   5
 
 //Components
-#define encoder   15  
-#define buzzer    23
+#define encoder   15
+
+//Buzzer
+#define BUZZER_PIN        23
+#define BUZZER_CHANNEL    0
+#define BUZZER_RESOLUTION 8
+//Notas musicales
+#define CANT_NOTES 8
+#define NOTAS_MUSIC (note_t[]){NOTE_C,NOTE_D,NOTE_E,NOTE_F,NOTE_G,NOTE_A,NOTE_B,NOTE_C}
+#define OCTAVA_NOTA (uint8_t[]){4,4,4,4,4,4,4,5}
+#define TIEMPO_NOTA (uint8_t[]){500,500,500,500,500,500,500,500}
+#define gap 200
