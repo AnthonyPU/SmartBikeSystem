@@ -1,10 +1,48 @@
 #include "settings.h"
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Iniciando Programa");
-}
+volatile int interruptCounter;
+int totalInterruptCounter;
 
+int led=2;
+bool ledState=false;
+
+hw_timer_t * timer = NULL;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+ 
+void IRAM_ATTR onTimer() {
+  portENTER_CRITICAL_ISR(&timerMux);
+  interruptCounter++;
+  ledState=!ledState;
+  digitalWrite(led,ledState);
+  portEXIT_CRITICAL_ISR(&timerMux);
+ 
+}
+ 
+void setup() {
+ 
+  Serial.begin(115200);
+  pinMode(led, OUTPUT);
+ 
+  timer = timerBegin(0, 80, true);
+  timerAttachInterrupt(timer, &onTimer, true);
+  timerAlarmWrite(timer, 100000, true);
+  timerAlarmEnable(timer);
+ 
+}
+ 
 void loop() {
-  Serial.println("Hola Mundo");
-  delay(1000);
+ /*
+  if (interruptCounter > 0) {
+ 
+    portENTER_CRITICAL(&timerMux);
+    interruptCounter--;
+    portEXIT_CRITICAL(&timerMux);
+ 
+    totalInterruptCounter++;
+ 
+    Serial.print("An interrupt as occurred. Total number: ");
+    Serial.print(totalInterruptCounter);
+    Serial.print("\t");
+    Serial.println(ledState);
+ 
+  }*/
 }
