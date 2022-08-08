@@ -1,4 +1,3 @@
-
 #include "settings.h"
 #include <Wire.h>
 
@@ -33,8 +32,12 @@ void IRAM_ATTR timerLed() {
   stateLed=!stateLed;
   if(stateLedDer)
   digitalWrite(ledDer,stateLed);
+  else
+  digitalWrite(ledDer,false);
   if(stateLedIzq)
   digitalWrite(ledIzq,stateLed);
+  else
+  digitalWrite(ledIzq,false);
   if(stateLedStop)
   digitalWrite(ledStop,stateLed);
   if(stateLedFront)
@@ -43,24 +46,14 @@ void IRAM_ATTR timerLed() {
 }
 void IRAM_ATTR isrDer() {
   if(!FLAG_DER){
+    stateLedDer=!stateLedDer;
     FLAG_DER=true;
-    STATE_DER=!STATE_DER;
-    if(!STATE_DER){
-      digitalWrite(ledDer,false);
-      stateLedDer=false;
-      Serial.println("Luces derecha desactivadas");
-    }
   }
 }
 void IRAM_ATTR isrIzq() {
   if(!FLAG_IZQ){
+    stateLedIzq=!stateLedIzq;
     FLAG_IZQ=true;
-    STATE_IZQ=!STATE_IZQ;
-    if(!STATE_IZQ){
-      digitalWrite(ledIzq,false);
-      stateLedIzq=false;
-      Serial.println("Luces izquierda desactivadas");
-    }
   }
 }
 void IRAM_ATTR isrLock() {
@@ -115,27 +108,25 @@ void setup() {
 }
 
 void loop() {
+  Serial.print("Velocidad: ");
+  Serial.print(vel);
+  Serial.print(" km/h");
+  Serial.print("\t");
+  Serial.print("Distancia recorrida: ");
+  Serial.print(dist);
+  Serial.println(" km");
   if(FLAG_ENCODER){
-    Serial.print("Velocidad: ");
-    Serial.print(vel);
-    Serial.print(" km/h");
-    Serial.print("\t");
-    Serial.print("Distancia recorrida: ");
-    Serial.print(dist);
-    Serial.println(" km");
     delay(200);
-    FLAG_ENCODER=false;
+    FLAG_ENCODER=false;    
   }
-  if(STATE_DER){
-    Serial.println("Luces derecha activadas");
-    stateLedDer=true;
-    delay(1500);
+  if(FLAG_DER){
+    Serial.println("Luces derecha");
+    delay(200);
     FLAG_DER=false;
   }
-  if(STATE_IZQ){
-    Serial.println("Luces izquierda activadas");
-    stateLedIzq=true;
-    delay(1500);
+  if(FLAG_IZQ){
+    Serial.println("Luces izquierda");
+    delay(200);
     FLAG_IZQ=false;
   }
   if(STATE_LOCK){
@@ -152,7 +143,6 @@ void antirrobo()
   Wire.beginTransmission( mpuAddress);
   Wire.write( 0x3B);                   // Starting with register 0x3B (ACCEL_XOUT_H)
   Wire.endTransmission( false);        // No stop condition for a repeated start
-
   // The MPU-6050 has the values as signed 16-bit integers.
   // There are 7 values in 14 registers.
   int16_t AcX, AcY, AcZ;

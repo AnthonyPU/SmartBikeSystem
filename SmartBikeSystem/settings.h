@@ -12,7 +12,7 @@
 
 bool FLAG_DER = false;
 bool FLAG_IZQ = false;
-volatile bool FLAG_LOCK = false;
+bool FLAG_LOCK = false;
 
 bool STATE_DER = false;
 bool STATE_IZQ = false;
