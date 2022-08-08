@@ -2,16 +2,14 @@
 #include <Wire.h>
 const int mpuAddress = 0x68;          // I2C address of the MPU-6050
 bool stateSirena=false;
-bool stateLed=false;
-bool stateLedDer=false;
-bool stateLedIzq=false;
-bool stateLedStop=false;
-bool stateLedFront=false;
+volatile bool stateLed=false;
+volatile bool stateLedDer=false;
+volatile bool stateLedIzq=false;
+volatile bool stateLedStop=false;
+volatile bool stateLedFront=false;
 
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-
 
 void IRAM_ATTR timerLed() {
   portENTER_CRITICAL_ISR(&timerMux);
@@ -25,9 +23,7 @@ void IRAM_ATTR timerLed() {
   if(stateLedFront)
   digitalWrite(ledFront,stateLed);
   portEXIT_CRITICAL_ISR(&timerMux);
- 
 }
-
 void IRAM_ATTR isrDer() {
   if(!FLAG_DER){
     FLAG_DER=true;
@@ -37,7 +33,6 @@ void IRAM_ATTR isrDer() {
       stateLedDer=false;
       Serial.println("Luces derecha desactivadas");
     }
-    
   }
 }
 void IRAM_ATTR isrIzq() {
@@ -55,8 +50,18 @@ void IRAM_ATTR isrLock() {
   if(!FLAG_LOCK){
     FLAG_LOCK=true;
     STATE_LOCK=!STATE_LOCK;
-    if(!STATE_LOCK)
-    Serial.println("Candado desactivado");
+    if(!STATE_LOCK){
+      stateSirena=false;
+      stateLedDer=false;
+      stateLedIzq=false;
+      stateLedStop=false;
+      stateLedFront=false;
+      digitalWrite(ledDer,false);
+      digitalWrite(ledIzq,false);
+      digitalWrite(ledStop,false);
+      digitalWrite(ledFront,false);
+      Serial.println("Candado desactivado");
+    }
   }
 }
 void setup() {
@@ -88,7 +93,6 @@ void setup() {
     Serial.println(F( "Error, MPU-6050 not found"));
     for(;;);                                   // halt the sketch if error encountered
   }
-
 }
 
 void loop() {
@@ -111,11 +115,8 @@ void loop() {
     antirrobo();
     if(stateSirena)
     alarma();
-    
   }
-  Serial.println(STATE_LOCK);
 }
-
 void antirrobo()
 {
   Wire.beginTransmission( mpuAddress);
@@ -142,35 +143,33 @@ void antirrobo()
 */
   if(AcX!=0||AcY!=0||AcZ!=0){
     stateSirena=true;
+    stateLedDer=true;
+    stateLedIzq=true;
+    stateLedStop=true;
+    stateLedFront=true;
   }
-
 }
-
 void melody(){
   for(int i=0;i<CANT_NOTES;i++){
     ledcWriteNote(BUZZER_CHANNEL,NOTAS_MUSIC[i],OCTAVA_NOTA[i]);
     delay(TIEMPO_NOTA[i]);
   }
 }
-void zap1()
-{
-    for (float f=3000;f>40;f=f*0.93){
+void zap1(){
+  for (float f=3000;f>40;f=f*0.93){
     ledcWriteTone(BUZZER_CHANNEL, f);
     delay(10);
   }
-}        
-
-void zap2()
-{
-    for (float f=3000;f>10;f=f*0.85){
-        ledcWriteTone(BUZZER_CHANNEL,2*f);
-        delay(5);
-        ledcWriteTone(BUZZER_CHANNEL,f);
-        delay(5);
+}
+void zap2(){
+  for (float f=3000;f>10;f=f*0.85){
+    ledcWriteTone(BUZZER_CHANNEL,2*f);
+    delay(5);
+    ledcWriteTone(BUZZER_CHANNEL,f);
+    delay(5);
   }
 }
-void risefall()
-{
+void risefall(){
   float rise_fall_time=180;
   int steps=50;
   float f_max=2600;
@@ -186,8 +185,7 @@ void risefall()
     delay(delay_time);
   }
 }
-void fall(float rise_fall_time)
-{
+void fall(float rise_fall_time){
   int steps=50;
   float f_max=2000;
   float f_min=500;
@@ -198,8 +196,7 @@ void fall(float rise_fall_time)
     delay(delay_time);
   }
 }
-void rise()
-{
+void rise(){
   float rise_fall_time=2000;
   int steps=100;
   float f_max=1500;
@@ -212,11 +209,8 @@ void rise()
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(100);
-  
 }
-
-void twotone()
-{
+void twotone(){
   float f_max=1500;
   float f_min=1000;
   float delay_time=800;
@@ -224,64 +218,56 @@ void twotone()
   delay(delay_time);
   ledcWriteTone(BUZZER_CHANNEL,f_min);
   delay(delay_time);
-  
 }
 void alarma() {
-
-  for (int count=1;count<=10;count++)
-  {
+  for (int count=1;count<=10;count++){
     if(!STATE_LOCK)
     break;
     risefall();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap);
-  for (int count=1;count<=10;count++)
-  {
+  for (int count=1;count<=10;count++){
     if(!STATE_LOCK)
     break;
     fall(300);
   } 
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
-  for (int count=1;count<=5;count++)
-  {
+  for (int count=1;count<=5;count++){
     if(!STATE_LOCK)
     break;
     fall(600);
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
-  for (int count=1;count<5;count++)
-  {
+  for (int count=1;count<5;count++){
     if(!STATE_LOCK)
     break;
     rise();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
-  for (int count=1;count<5;count++)
-  {
+  for (int count=1;count<5;count++){
     if(!STATE_LOCK)
     break;
     twotone();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
-  for (int count=1;count<10;count++)
-  {
+  for (int count=1;count<10;count++){
     if(!STATE_LOCK)
     break;
     zap1();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap); 
-  for (int count=1;count<10;count++)
-  {
+  for (int count=1;count<10;count++){
     if(!STATE_LOCK)
     break;
     zap2();
   }
   ledcWriteTone(BUZZER_CHANNEL,0);
   delay(gap);
+  FLAG_LOCK=false;
 }
