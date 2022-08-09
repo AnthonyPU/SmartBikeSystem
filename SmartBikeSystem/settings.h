@@ -9,10 +9,12 @@
 #define PIN_BTN_DER 4
 #define PIN_BTN_IZQ 2
 #define PIN_BTN_LOCK 5
+#define PIN_BTN_BLZ 18
 
 bool FLAG_DER = false;
 bool FLAG_IZQ = false;
 bool FLAG_LOCK = false;
+bool FLAG_BLZ = false;
 
 bool STATE_DER = false;
 bool STATE_IZQ = false;
