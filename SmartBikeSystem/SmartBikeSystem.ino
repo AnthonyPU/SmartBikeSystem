@@ -27,10 +27,10 @@ void IRAM_ATTR isrEncoder() {
     vel = diametro * PI * 0.0000254 / dt * 3600000.0;
     digitalWrite(ledFront, true);
     if (vel_last < vel){
-      stateLedStop=true;
+      digitalWrite(ledStop, true);
     }
     else{
-      stateLedStop=false;
+      digitalWrite(ledStop, false);
     }
     vel_last=vel;
   }
@@ -160,6 +160,7 @@ void loop() {
   }
   if(millis()-t_lastPulse>5000){
     digitalWrite(ledFront,false);
+    digitalWrite(ledStop,false);
     stateLedStop=false;
   } 
 }

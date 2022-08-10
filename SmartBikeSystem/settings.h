@@ -8,7 +8,7 @@
 //Buttons
 #define PIN_BTN_DER 4
 #define PIN_BTN_IZQ 2
-#define PIN_BTN_LOCK 5
+#define PIN_BTN_LOCK 15
 #define PIN_BTN_BLZ 18
 
 bool FLAG_DER = false;
@@ -21,7 +21,7 @@ bool STATE_IZQ = false;
 bool STATE_LOCK = false;
 
 //Components
-#define PIN_ENCODER   15  
+#define PIN_ENCODER   35
 //Buzzer
 #define BUZZER_PIN        23
 #define BUZZER_CHANNEL    0
