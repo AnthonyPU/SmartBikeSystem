@@ -2,9 +2,10 @@
 
 Sistema embebido que se acopla a una bicicleta para mejorar la experiencia de usuario con las funcionalidades de velocímetro, luces direccionales y alarma antirrobo
 
+[Simulación en Wokwi](https://wokwi.com/projects/339436184287576659)
+
 # Descripción del proyecto
 
----
 
 El proyecto consiste en un sistema embebido conformado por una placa de desarrollo ESP32 que a través del sensor óptico permite monitorear constantemente la velocidad. Además cuenta con un sub-sistema de luces que al empezar el manejo de la bicicleta se encienden las luces, así mismo cuando desacelera la luz trasera se enciende, también cuenta con luces direccionales que a través de 3 pulsadores puedes encender luces de la izquierda, derecha o ambas. Por último, la funcionalidad de alarma antirrobo se inicia pulsando un botón “candado” que al detectar un movimiento brusco con el acelerómetro-giroscopio empieza a emitir una alarma muy similar a la de los automóviles.
 
