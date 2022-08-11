@@ -1,129 +1,53 @@
 #include "settings.h"
 #include <Wire.h>
 
-long t_lastPulse;
-float dt;
-float diametro = 26;
-float dist = 0, vel = 0, vel_last=0;
-bool FLAG_ENCODER = false;
+//Declaración de interrupciones
+void IRAM_ATTR isrDer();
+void IRAM_ATTR isrIzq();
+void IRAM_ATTR isrBlz();
+void IRAM_ATTR isrLock();
+void IRAM_ATTR isrEncoder();
+void IRAM_ATTR timerLed();
 
-const int mpuAddress = 0x68;          // I2C address of the MPU-6050
-bool stateSirena = false;
-volatile bool stateLed = false;
-volatile bool stateLedDer = false;
-volatile bool stateLedIzq = false;
-volatile bool stateLedStop = false;
-volatile bool stateLedFront = false;
-
-hw_timer_t * timer = NULL;
-portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-void IRAM_ATTR isrEncoder() {
-  if (!FLAG_ENCODER) {
-    FLAG_ENCODER = true;
-    dt = millis() - t_lastPulse;
-    t_lastPulse = millis(),
-    dist = diametro * PI * 0.0000254 + dist;
-    vel = diametro * PI * 0.0000254 / dt * 3600000.0;
-    digitalWrite(ledFront, true);
-    if (vel_last < vel){
-      digitalWrite(ledStop, true);
-    }
-    else{
-      digitalWrite(ledStop, false);
-    }
-    vel_last=vel;
-  }
-}
-void IRAM_ATTR timerLed() {
-  portENTER_CRITICAL_ISR(&timerMux);
-  stateLed = !stateLed;
-  if (stateLedDer)
-    digitalWrite(ledDer, stateLed);
-  else
-    digitalWrite(ledDer, false);
-  if (stateLedIzq)
-    digitalWrite(ledIzq, stateLed);
-  else
-    digitalWrite(ledIzq, false);
-  if (stateLedStop)
-    digitalWrite(ledStop, stateLed);
-  //if (stateLedFront)
-  //  digitalWrite(ledFront, stateLed);
-  portEXIT_CRITICAL_ISR(&timerMux);
-}
-void IRAM_ATTR isrDer() {
-  if (!FLAG_DER) {
-    stateLedDer = !stateLedDer;
-    FLAG_DER = true;
-  }
-}
-void IRAM_ATTR isrIzq() {
-  if (!FLAG_IZQ) {
-    stateLedIzq = !stateLedIzq;
-    FLAG_IZQ = true;
-  }
-}
-void IRAM_ATTR isrBlz() {
-  if (!FLAG_BLZ) {
-    stateLedIzq = !stateLedIzq;
-    stateLedDer = !stateLedDer;
-    FLAG_BLZ = true;
-  }
-}
-void IRAM_ATTR isrLock() {
-  if (!FLAG_LOCK) {
-    FLAG_LOCK = true;
-    STATE_LOCK = !STATE_LOCK;
-    if (!STATE_LOCK) {
-      stateSirena = false;
-      stateLedDer = false;
-      stateLedIzq = false;
-      stateLedStop = false;
-      stateLedFront = false;
-      digitalWrite(ledDer, false);
-      digitalWrite(ledIzq, false);
-      digitalWrite(ledStop, false);
-      digitalWrite(ledFront, false);
-      Serial.println("Candado desactivado");
-    }
-  }
-}
 void setup() {
   Serial.begin(115200);
   Serial.println("Iniciando Programa");
+  // Inicialización de los pines
+  pinMode(LED_DER, OUTPUT);
+  pinMode(LED_IZQ, OUTPUT);
+  pinMode(LED_STOP, OUTPUT);
+  pinMode(LED_FRONT, OUTPUT);
   pinMode(PIN_ENCODER, INPUT_PULLUP);
-  attachInterrupt(PIN_ENCODER, isrEncoder, FALLING);
-  pinMode(ledDer, OUTPUT);
-  pinMode(ledIzq, OUTPUT);
-  pinMode(ledStop, OUTPUT);
-  pinMode(ledFront, OUTPUT);
   pinMode(PIN_BTN_DER, INPUT_PULLUP);
   pinMode(PIN_BTN_IZQ, INPUT_PULLUP);
   pinMode(PIN_BTN_LOCK, INPUT_PULLUP);
+  // Inicialización de las interrupciones
   attachInterrupt(PIN_BTN_DER, isrDer, FALLING);
   attachInterrupt(PIN_BTN_IZQ, isrIzq, FALLING);
-  attachInterrupt(PIN_BTN_LOCK, isrLock, FALLING);
   attachInterrupt(PIN_BTN_BLZ, isrBlz, FALLING);
+  attachInterrupt(PIN_BTN_LOCK, isrLock, FALLING);
+  attachInterrupt(PIN_ENCODER, isrEncoder, FALLING);
+  ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
+  // Inicialización del timer
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &timerLed, true);
   timerAlarmWrite(timer, 150000, true);
   timerAlarmEnable(timer);
-  ledcAttachPin(BUZZER_PIN, BUZZER_CHANNEL);
+  // Inicialización del MPU6050
   Wire.begin();
-  // Initialize the MPU-6050 and test if it is connected.
   Wire.beginTransmission( mpuAddress);
-  Wire.write( 0x6B);                           // PWR_MGMT_1 register
-  Wire.write( 0);                              // set to zero (wakes up the MPU-6050)
+  Wire.write( 0x6B);
+  Wire.write( 0);
   auto error = Wire.endTransmission();
   if ( error != 0)
   {
     Serial.println(F( "Error, MPU-6050 not found"));
-    for (;;);                                  // halt the sketch if error encountered
+    for (;;);
   }
 }
 
 void loop() {
+  //Mostrar los valores de velocidad y distancia
   Serial.print("Velocidad: ");
   Serial.print(vel);
   Serial.print(" km/h");
@@ -131,39 +55,118 @@ void loop() {
   Serial.print("Distancia recorrida: ");
   Serial.print(dist);
   Serial.println(" km");
-  if (FLAG_ENCODER) {
-    delay(200);
-    FLAG_ENCODER = false;
+  //Condicionales de acuerdo a la activación de cada interrupción
+  //El delay permite el efecto rebote en los pulsadores
+  if (flag_encoder) {
+    delay(TIEMPO_REBOTE);
+    flag_encoder = false;
   }
-  if (FLAG_DER) {
+  if (flag_der) {
     Serial.println("Luces derecha");
-    delay(200);
-    FLAG_DER = false;
+    delay(TIEMPO_REBOTE);
+    flag_der = false;
   }
-  if (FLAG_IZQ) {
+  if (flag_izq) {
     Serial.println("Luces izquierda");
-    delay(200);
-    FLAG_IZQ = false;
+    delay(TIEMPO_REBOTE);
+    flag_izq = false;
   }
-  if (FLAG_BLZ) {
+  if (flag_blz) {
     Serial.println("Luces baliza");
-    delay(200);
-    FLAG_BLZ = false;
+    delay(TIEMPO_REBOTE);
+    flag_blz = false;
   }
-  if (STATE_LOCK) {
+  if (state_lock) {
     Serial.println("Candado activado");
-    delay(1500);
-    FLAG_LOCK = false;
+    delay(TIEMPO_REBOTE);
+    flag_lock = false;
     antirrobo();
-    if (stateSirena)
+    if (state_sirena)
       alarma();
   }
-  if(millis()-t_lastPulse>5000){
-    digitalWrite(ledFront,false);
-    digitalWrite(ledStop,false);
-    stateLedStop=false;
-  } 
+  //Condicional para apagar las luces cuando la bicicleta no recorre
+  if (millis() - t_lastPulse > 5000) {
+    digitalWrite(LED_FRONT, LOW);
+    digitalWrite(LED_STOP, LOW);
+    state_led_stop = false;
+  }
 }
+
+//Funciones de interrupción
+
+void IRAM_ATTR isrDer() {
+  if (!flag_der) {
+    state_led_der = !state_led_der;
+    flag_der = true;
+  }
+}
+void IRAM_ATTR isrIzq() {
+  if (!flag_izq) {
+    state_led_izq = !state_led_izq;
+    flag_izq = true;
+  }
+}
+void IRAM_ATTR isrBlz() {
+  if (!flag_blz) {
+    state_led_izq = !state_led_izq;
+    state_led_der = !state_led_der;
+    flag_blz = true;
+  }
+}
+void IRAM_ATTR isrLock() {
+  if (!flag_lock) {
+    flag_lock = true;
+    state_lock = !state_lock;
+    if (!state_lock) {
+      state_sirena = false;
+      state_led_der = false;
+      state_led_izq = false;
+      state_led_stop = false;
+      state_led_front = false;
+      digitalWrite(LED_DER, false);
+      digitalWrite(LED_IZQ, false);
+      digitalWrite(LED_STOP, false);
+      digitalWrite(LED_FRONT, false);
+      Serial.println("Candado desactivado");
+    }
+  }
+}
+void IRAM_ATTR isrEncoder() {
+  if (!flag_encoder) {
+    flag_encoder = true;
+    dt = millis() - t_lastPulse;
+    t_lastPulse = millis(),
+    dist = diametro * PI * 0.0000254 + dist;
+    vel = diametro * PI * 0.0000254 / dt * 3600000.0;
+    digitalWrite(LED_FRONT, true);
+    if (vel_last < vel) {
+      digitalWrite(LED_STOP, true);
+    }
+    else {
+      digitalWrite(LED_STOP, false);
+    }
+    vel_last = vel;
+  }
+}
+void IRAM_ATTR timerLed() {
+  portENTER_CRITICAL_ISR(&timerMux);
+  state_led = !state_led;
+  if (state_led_der)
+    digitalWrite(LED_DER, state_led);
+  else
+    digitalWrite(LED_DER, false);
+  if (state_led_izq)
+    digitalWrite(LED_IZQ, state_led);
+  else
+    digitalWrite(LED_IZQ, false);
+  if (state_led_stop)
+    digitalWrite(LED_STOP, state_led);
+  //Parpadeo del led front
+  //if (state_led_front)
+  //  digitalWrite(ledFront, state_led);
+  portEXIT_CRITICAL_ISR(&timerMux);
+}
+//Función para detectar movimiento
 void antirrobo()
 {
   Wire.beginTransmission( mpuAddress);
@@ -188,13 +191,16 @@ void antirrobo()
     Serial.println(AcZ);
   */
   if (AcX != 0 || AcY != 0 || AcZ != 0) {
-    stateSirena = true;
-    stateLedDer = true;
-    stateLedIzq = true;
-    stateLedStop = true;
-    stateLedFront = true;
+    state_sirena = true;
+    state_led_der = true;
+    state_led_izq = true;
+    state_led_stop = true;
+    state_led_front = true;
   }
 }
+
+//Funciones para generar melodías en el buzzer
+
 void melody() {
   for (int i = 0; i < CANT_NOTES; i++) {
     ledcWriteNote(BUZZER_CHANNEL, NOTAS_MUSIC[i], OCTAVA_NOTA[i]);
@@ -267,53 +273,53 @@ void twotone() {
 }
 void alarma() {
   for (int count = 1; count <= 10; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     risefall();
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count <= 10; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     fall(300);
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count <= 5; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     fall(600);
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count < 5; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     rise();
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count < 5; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     twotone();
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count < 10; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     zap1();
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
+  delay(GAP);
   for (int count = 1; count < 10; count++) {
-    if (!STATE_LOCK)
+    if (!state_lock)
       break;
     zap2();
   }
   ledcWriteTone(BUZZER_CHANNEL, 0);
-  delay(gap);
-  FLAG_LOCK = false;
+  delay(GAP);
+  flag_lock = false;
 }
