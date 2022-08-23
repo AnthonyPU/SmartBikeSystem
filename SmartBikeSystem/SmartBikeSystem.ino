@@ -1,12 +1,14 @@
 #include "settings.h"
 #include <Wire.h>
 
-//Declaración de interrupciones
+//Declaración de interrupciones de los botones
 void IRAM_ATTR isrDer();
 void IRAM_ATTR isrIzq();
 void IRAM_ATTR isrBlz();
 void IRAM_ATTR isrLock();
+//Declaración de la interrupción del encoder
 void IRAM_ATTR isrEncoder();
+//Declaración de la interrupción del timer para parpadeo
 void IRAM_ATTR timerLed();
 
 void setup() {
@@ -44,6 +46,8 @@ void setup() {
     Serial.println(F( "Error, MPU-6050 not found"));
     for (;;);
   }
+  //Encendido del LED_FRONT
+  digitalWrite(LED_FRONT, HIGH);
 }
 
 void loop() {
@@ -78,15 +82,17 @@ void loop() {
   }
   if (state_lock) {
     Serial.println("Candado activado");
+    digitalWrite(LED_FRONT, LOW);
     delay(TIEMPO_REBOTE);
     flag_lock = false;
     antirrobo();
-    if (state_sirena)
+    if (state_sirena){
+      digitalWrite(LED_FRONT, HIGH);
       alarma();
+    }
   }
   //Condicional para apagar las luces cuando la bicicleta no recorre
   if (millis() - t_lastPulse > 5000) {
-    digitalWrite(LED_FRONT, LOW);
     digitalWrite(LED_STOP, LOW);
     state_led_stop = false;
   }
@@ -123,10 +129,10 @@ void IRAM_ATTR isrLock() {
       state_led_izq = false;
       state_led_stop = false;
       state_led_front = false;
-      digitalWrite(LED_DER, false);
-      digitalWrite(LED_IZQ, false);
-      digitalWrite(LED_STOP, false);
-      digitalWrite(LED_FRONT, false);
+      digitalWrite(LED_DER, LOW);
+      digitalWrite(LED_IZQ, LOW);
+      digitalWrite(LED_STOP, LOW);
+      digitalWrite(LED_FRONT, LOW);
       Serial.println("Candado desactivado");
     }
   }
@@ -161,9 +167,10 @@ void IRAM_ATTR timerLed() {
     digitalWrite(LED_IZQ, false);
   if (state_led_stop)
     digitalWrite(LED_STOP, state_led);
-  //Parpadeo del led front
-  //if (state_led_front)
-  //  digitalWrite(ledFront, state_led);
+  /*
+  if (state_led_front)
+    digitalWrite(LED_FRONT, state_led);
+  */
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 //Función para detectar movimiento
