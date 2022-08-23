@@ -18,8 +18,12 @@
 #define BUZZER_PIN        23
 #define BUZZER_CHANNEL    0
 #define BUZZER_RESOLUTION 8
+
 //Espacio de tiempo entre funciones musicales
 #define GAP 200
+
+//Tiempo de espera para evitar el efecto rebote en los pulsadores
+#define TIEMPO_PARPADEO 1000000 //Está en microsegundos
 
 //Tiempo de espera para evitar el efecto rebote en los pulsadores
 #define TIEMPO_REBOTE 200
