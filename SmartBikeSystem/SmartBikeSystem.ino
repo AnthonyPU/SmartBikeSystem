@@ -201,12 +201,6 @@ void antirrobo()
 
 //Funciones para generar melodías en el buzzer
 
-void melody() {
-  for (int i = 0; i < CANT_NOTES; i++) {
-    ledcWriteNote(BUZZER_CHANNEL, NOTAS_MUSIC[i], OCTAVA_NOTA[i]);
-    delay(TIEMPO_NOTA[i]);
-  }
-}
 void zap1() {
   for (float f = 3000; f > 40; f = f * 0.93) {
     ledcWriteTone(BUZZER_CHANNEL, f);
