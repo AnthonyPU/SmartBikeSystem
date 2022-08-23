@@ -24,6 +24,9 @@
 //Tiempo de espera para evitar el efecto rebote en los pulsadores
 #define TIEMPO_REBOTE 200
 
+//Margen para la detección de acelaración del MPU6050
+#define MARGEN_ACEL 16384 // Valor máximo 32767
+
 //Flags
 bool flag_der     = false;
 bool flag_izq     = false;
