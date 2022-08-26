@@ -30,6 +30,7 @@
 
 //Margen para la detección de acelaración del MPU6050
 #define MARGEN_ACEL 16384 // Valor máximo 32767
+#define MARGEN_GYR 4384 // Valor máximo 32767
 
 //Flags
 bool flag_der     = false;
@@ -55,6 +56,7 @@ float dist = 0, vel = 0, vel_last = 0;
 
 //Dicección I2C del MPU-6050
 const int mpuAddress = 0x68;
+int16_t AcX0,AcY0,AcZ0,Tmp0,GyX0,GyY0,GyZ0;
 
 //Configuración del timer
 hw_timer_t * timer = NULL;

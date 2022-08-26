@@ -51,14 +51,6 @@ void setup() {
 }
 
 void loop() {
-  //Mostrar los valores de velocidad y distancia
-  Serial.print("Velocidad: ");
-  Serial.print(vel);
-  Serial.print(" km/h");
-  Serial.print("\t");
-  Serial.print("Distancia recorrida: ");
-  Serial.print(dist);
-  Serial.println(" km");
   //Condicionales de acuerdo a la activación de cada interrupción
   //El delay permite el efecto rebote en los pulsadores
   if (flag_encoder) {
@@ -85,11 +77,22 @@ void loop() {
     digitalWrite(LED_FRONT, LOW);
     delay(TIEMPO_REBOTE);
     flag_lock = false;
-    antirrobo();
-    if (state_sirena){
-      digitalWrite(LED_FRONT, HIGH);
-      alarma();
+    guardarDatosIniciales();
+    while (!state_sirena){
+      antirrobo();
     }
+    digitalWrite(LED_FRONT, HIGH);
+    alarma();
+  }
+  else{
+    //Mostrar los valores de velocidad y distancia
+    Serial.print("Velocidad: ");
+    Serial.print(vel);
+    Serial.print(" km/h");
+    Serial.print("\t");
+    Serial.print("Distancia recorrida: ");
+    Serial.print(dist);
+    Serial.println(" km");
   }
   //Condicional para apagar las luces cuando la bicicleta no recorre
   if (millis() - t_lastPulse > 5000) {
@@ -173,6 +176,43 @@ void IRAM_ATTR timerLed() {
   */
   portEXIT_CRITICAL_ISR(&timerMux);
 }
+//Función para guardar datos iniciales
+void guardarDatosIniciales()
+{
+  Wire.beginTransmission( mpuAddress);
+  Wire.write( 0x3B);                   // Starting with register 0x3B (ACCEL_XOUT_H)
+  Wire.endTransmission( false);        // No stop condition for a repeated start
+  // The MPU-6050 has the values as signed 16-bit integers.
+  // There are 7 values in 14 registers.
+
+  Wire.requestFrom( mpuAddress, 14);   // request a total of 14 bytes
+  AcX0 = Wire.read() << 8 | Wire.read(); // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
+  AcY0 = Wire.read() << 8 | Wire.read(); // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+  AcZ0 = Wire.read() << 8 | Wire.read(); // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+  Tmp0=Wire.read()<<8|Wire.read(); // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
+  GyX0=Wire.read()<<8|Wire.read(); // 0x43 (GYRO_XOUT_H) & 0x44 (GYRO_XOUT_L)
+  GyY0=Wire.read()<<8|Wire.read(); // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
+  GyZ0=Wire.read()<<8|Wire.read(); // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
+
+  Serial.print("AcX0: ");
+  Serial.print(AcX0);
+  Serial.print("\t");
+  Serial.print("AcY0: ");
+  Serial.print(AcY0);
+  Serial.print("\t");
+  Serial.print("AcZ0: ");
+  Serial.print(AcZ0);
+  Serial.print("\t");
+  Serial.print("GyX0: ");
+  Serial.print(GyX0);
+  Serial.print("\t");
+  Serial.print("GyY0: ");
+  Serial.print(GyY0);
+  Serial.print("\t");
+  Serial.print("GyZ0: ");
+  Serial.println(GyZ0);
+  
+}
 //Función para detectar movimiento
 void antirrobo()
 {
@@ -181,23 +221,36 @@ void antirrobo()
   Wire.endTransmission( false);        // No stop condition for a repeated start
   // The MPU-6050 has the values as signed 16-bit integers.
   // There are 7 values in 14 registers.
-  int16_t AcX, AcY, AcZ;
+  int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
 
   Wire.requestFrom( mpuAddress, 14);   // request a total of 14 bytes
   AcX = Wire.read() << 8 | Wire.read(); // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
   AcY = Wire.read() << 8 | Wire.read(); // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
   AcZ = Wire.read() << 8 | Wire.read(); // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+  Tmp=Wire.read()<<8|Wire.read(); // 0x41 (TEMP_OUT_H) & 0x42 (TEMP_OUT_L)
+  GyX=Wire.read()<<8|Wire.read(); // 0x43 (GYRO_XOUT_H) & 0x44 (GYRO_XOUT_L)
+  GyY=Wire.read()<<8|Wire.read(); // 0x45 (GYRO_YOUT_H) & 0x46 (GYRO_YOUT_L)
+  GyZ=Wire.read()<<8|Wire.read(); // 0x47 (GYRO_ZOUT_H) & 0x48 (GYRO_ZOUT_L)
+
+  Serial.print("AcX: ");
+  Serial.print(AcX);
+  Serial.print("\t");
+  Serial.print("AcY: ");
+  Serial.print(AcY);
+  Serial.print("\t");
+  Serial.print("AcZ: ");
+  Serial.print(AcZ);
+  Serial.print("\t");
+  Serial.print("GyX: ");
+  Serial.print(GyX);
+  Serial.print("\t");
+  Serial.print("GyY: ");
+  Serial.print(GyY);
+  Serial.print("\t");
+  Serial.print("GyZ: ");
+  Serial.println(GyZ);
   
-    Serial.print("AcX: ");
-    Serial.print(AcX);
-    Serial.print("\t");
-    Serial.print("AcY: ");
-    Serial.print(AcY);
-    Serial.print("\t");
-    Serial.print("AcZ: ");
-    Serial.println(AcZ);
-  
-  if (abs(AcX) > MARGEN_ACEL || abs(AcY) > MARGEN_ACEL || abs(AcZ) > MARGEN_ACEL) {
+  if (abs(GyX-GyX0) > MARGEN_GYR || abs(GyY-GyY0) > MARGEN_GYR || abs(GyZ-GyZ) > MARGEN_GYR) {
     state_sirena = true;
     state_led_der = true;
     state_led_izq = true;
